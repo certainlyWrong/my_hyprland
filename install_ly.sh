@@ -26,6 +26,6 @@ sudo systemctl enable ly@tty2.service
 sudo systemctl disable getty@tty2.service
 
 cd -
-rm -rf "$TEMP_LY"
+sudo rm -rf "$TEMP_LY"
 
 echo "✅ Ly installation complete!"
