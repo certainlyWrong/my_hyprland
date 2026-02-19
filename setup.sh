@@ -24,13 +24,13 @@ fi
 
 echo "�📦 Updating system and installing base dependencies..."
 sudo pacman -Syyu --noconfirm
-sudo pacman -S --needed --noconfirm base-devel git curl wget zig ncurses pam libxcb
+sudo pacman -S --needed --noconfirm base-devel git curl wget zig ncurses pam libxcb linux-headers
 
-echo "🎮 Installing graphics drivers (Hybrid Intel + NVIDIA Open)..."
+echo "🎮 Installing graphics drivers (Hybrid Intel + NVIDIA DKMS)..."
 sudo pacman -S --needed --noconfirm \
     mesa lib32-mesa vulkan-icd-loader lib32-vulkan-icd-loader \
     vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver \
-    nvidia-open nvidia-utils lib32-nvidia-utils nvidia-settings
+    nvidia-dkms nvidia-utils lib32-nvidia-utils nvidia-settings
 
 # Function to install yay
 install_yay() {
@@ -91,11 +91,12 @@ CLUTTER_BACKEND=wayland
 EOF'
 
 echo "📝 Configuring Early KMS for NVIDIA..."
-# Add NVIDIA modules to mkinitcpio
+# Add NVIDIA modules to mkinitcpio if not present
 if ! grep -q "nvidia nvidia_modeset nvidia_uvm nvidia_drm" /etc/mkinitcpio.conf; then
     sudo sed -i 's/^MODULES=(/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm /' /etc/mkinitcpio.conf
-    sudo mkinitcpio -P
 fi
+# Always regenerate to be safe after driver/header changes
+sudo mkinitcpio -P
 
 # Set nvidia_drm.modeset=1
 if [ ! -f /etc/modprobe.d/nvidia.conf ]; then
