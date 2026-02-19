@@ -51,17 +51,8 @@ sudo pacman -S --needed --noconfirm \
 echo "🛠️ Installing AUR packages..."
 yay -S --noconfirm hyprshot wlogout qview visual-studio-code-bin google-chrome
 
-echo "🖥️ Installing and configuring Ly (Display Manager) from source..."
-TEMP_LY=$(mktemp -d)
-git clone --recurse-submodules https://codeberg.org/fairyglade/ly "$TEMP_LY"
-cd "$TEMP_LY"
-# Using zig build to ensure all components (including ly-setup) are compiled
-sudo zig build installexe -Dinit_system=systemd
-cd -
-rm -rf "$TEMP_LY"
-
-sudo systemctl enable ly@tty2.service
-sudo systemctl disable getty@tty2.service
+echo "🖥️ Installing and configuring Ly Display Manager..."
+./install_ly.sh
 
 echo "🔧 Enabling Pipewire services..."
 systemctl --user enable pipewire pipewire-pulse wireplumber
