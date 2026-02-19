@@ -56,13 +56,12 @@ TEMP_LY=$(mktemp -d)
 git clone --recurse-submodules https://codeberg.org/fairyglade/ly "$TEMP_LY"
 cd "$TEMP_LY"
 # Using zig build to ensure all components (including ly-setup) are compiled
-sudo zig build -Dinit_system=systemd
-# Manually installing since installexe usually just builds it in zig-out
-sudo ./zig-out/bin/ly-setup install
+sudo zig build installexe -Dinit_system=systemd
 cd -
 rm -rf "$TEMP_LY"
 
-sudo systemctl enable ly.service
+sudo systemctl enable ly@tty2.service
+sudo systemctl disable getty@tty2.service
 
 echo "🔧 Enabling Pipewire services..."
 systemctl --user enable pipewire pipewire-pulse wireplumber
