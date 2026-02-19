@@ -24,7 +24,18 @@ fi
 
 echo "�📦 Updating system and installing base dependencies..."
 sudo pacman -Syyu --noconfirm
-sudo pacman -S --needed --noconfirm base-devel git curl wget zig ncurses pam libxcb linux-headers
+sudo pacman -S --needed --noconfirm base-devel git curl wget zig ncurses pam libxcb
+
+echo "🔍 Detecting running kernel and installing headers..."
+KERNEL_TYPE=$(uname -r | sed 's/.*-\([a-z]*\)/\1/')
+if [[ "$KERNEL_TYPE" == "arch" ]]; then
+    sudo pacman -S --needed --noconfirm linux-headers
+elif pacman -Qi "linux-$KERNEL_TYPE-headers" &> /dev/null; then
+    sudo pacman -S --needed --noconfirm "linux-$KERNEL_TYPE-headers"
+else
+    # Fallback to standard headers if detection is ambiguous
+    sudo pacman -S --needed --noconfirm linux-headers
+fi
 
 echo "🎮 Installing graphics drivers (Hybrid Intel + NVIDIA DKMS)..."
 sudo pacman -S --needed --noconfirm \
@@ -95,6 +106,10 @@ echo "📝 Configuring Early KMS for NVIDIA..."
 if ! grep -q "nvidia nvidia_modeset nvidia_uvm nvidia_drm" /etc/mkinitcpio.conf; then
     sudo sed -i 's/^MODULES=(/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm /' /etc/mkinitcpio.conf
 fi
+# Force DKMS build before mkinitcpio
+echo "🔨 Building NVIDIA kernel modules via DKMS..."
+sudo dkms autoinstall
+
 # Always regenerate to be safe after driver/header changes
 sudo mkinitcpio -P
 
