@@ -1,28 +1,67 @@
+#!/bin/bash
 
-echo "🚀 Updating system..."
-sudo pacman -Syyu
+# Exit on error
+set -e
 
-echo "Installing packages..."
-sudo pacman -S git curl nano pipewire pipewire-alsa pipewire-jack pipewire-pulse wireplumber gstreamer gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly ffmpeg
+echo "🚀 Starting setup script..."
 
-echo "Installing yay..."
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si
+# Prevention: Do NOT run as root/sudo directly
+if [[ $EUID -eq 0 ]]; then
+   echo "❌ Please DO NOT run this script with sudo."
+   echo "The script will ask for your password when needed."
+   exit 1
+fi
 
-cd && rm -rf yay/
+echo "📦 Updating system and installing base dependencies..."
+sudo pacman -Syyu --noconfirm
+sudo pacman -S --needed --noconfirm base-devel git curl wget
 
-echo "Installing hyprland and dependencies..."
-sudo pacman -S hyprland hyprpaper hyprlock hypridle hyprcursor hyprpicker hyprshare waybar kitty rofi-wayland dolphin dolphin-plugins ark kio-admin polkit-kde-agent qt5-wayland qt6-wayland xdg-user-dirs-gtk xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk dunst cliphist vlc pavucontrol-qt
+# Function to install yay
+install_yay() {
+    if ! command -v yay &> /dev/null; then
+        echo "✨ Installing yay..."
+        TEMP_DIR=$(mktemp -d)
+        git clone https://aur.archlinux.org/yay.git "$TEMP_DIR"
+        cd "$TEMP_DIR"
+        makepkg -si --noconfirm
+        cd -
+        rm -rf "$TEMP_DIR"
+    else
+        echo "✅ yay is already installed."
+    fi
+}
 
-echo "Installing fonts..."
-sudo pacman -S ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-fira-code ttf-font-awesome ttf-opensans noto-fonts ttf-droid ttf-roboto
+install_yay
 
-echo "Installing yay..."
+echo "🎨 Installing Hyprland and desktop components..."
+sudo pacman -S --needed --noconfirm \
+    hyprland hyprpaper hyprlock hypridle hyprcursor hyprpicker \
+    waybar kitty rofi-wayland dolphin dolphin-plugins ark kio-admin \
+    polkit-kde-agent qt5-wayland qt6-wayland xdg-user-dirs-gtk \
+    xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
+    dunst cliphist vlc pavucontrol-qt \
+    pipewire pipewire-alsa pipewire-jack pipewire-pulse wireplumber \
+    gstreamer gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly ffmpeg
+
+echo "🔡 Installing fonts..."
+sudo pacman -S --needed --noconfirm \
+    ttf-jetbrains-mono ttf-jetbrains-mono-nerd ttf-fira-code \
+    ttf-font-awesome ttf-opensans noto-fonts ttf-droid ttf-roboto
+
+echo "🛠️ Installing AUR packages..."
 yay -S --noconfirm hyprshot wlogout qview visual-studio-code-bin google-chrome
 
+echo "🖥️ Installing and configuring Ly (Display Manager)..."
+yay -S --noconfirm ly
+sudo systemctl enable ly.service
+
+echo "🔧 Enabling Pipewire services..."
 systemctl --user enable pipewire pipewire-pulse wireplumber
 
-systemctl --user start pipewire pipewire-pulse wireplumber
+echo "✅ Setup complete!"
 
-shutdown -r now
+read -p "🔄 Do you want to reboot now? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    reboot
+fi
