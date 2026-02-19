@@ -55,8 +55,8 @@ echo "🖥️ Installing and configuring Ly (Display Manager) from source..."
 TEMP_LY=$(mktemp -d)
 git clone --recurse-submodules https://codeberg.org/fairyglade/ly "$TEMP_LY"
 cd "$TEMP_LY"
-# Using the specific command requested by the user
-zig build installexe -Dinit_system=systemd
+# Using the specific command requested by the user, now with sudo to avoid AccessDenied
+sudo zig build installexe -Dinit_system=systemd
 # Manually installing since installexe usually just builds it in zig-out
 sudo ./zig-out/bin/ly-setup install
 cd -
