@@ -14,7 +14,7 @@ fi
 
 echo "📦 Updating system and installing base dependencies..."
 sudo pacman -Syyu --noconfirm
-sudo pacman -S --needed --noconfirm base-devel git curl wget
+sudo pacman -S --needed --noconfirm base-devel git curl wget zig ncurses pam libxcb
 
 # Function to install yay
 install_yay() {
@@ -51,8 +51,17 @@ sudo pacman -S --needed --noconfirm \
 echo "🛠️ Installing AUR packages..."
 yay -S --noconfirm hyprshot wlogout qview visual-studio-code-bin google-chrome
 
-echo "🖥️ Installing and configuring Ly (Display Manager)..."
-yay -S --noconfirm ly
+echo "🖥️ Installing and configuring Ly (Display Manager) from source..."
+TEMP_LY=$(mktemp -d)
+git clone --recurse-submodules https://codeberg.org/fairyglade/ly "$TEMP_LY"
+cd "$TEMP_LY"
+# Using the specific command requested by the user
+zig build installexe -Dinit_system=systemd
+# Manually installing since installexe usually just builds it in zig-out
+sudo ./zig-out/bin/ly-setup install
+cd -
+rm -rf "$TEMP_LY"
+
 sudo systemctl enable ly.service
 
 echo "🔧 Enabling Pipewire services..."
