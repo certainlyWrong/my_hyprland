@@ -1,72 +1,74 @@
 # My Hyprland Setup 🚀
 
-This repository contains a set of modular and automated scripts for installing and configuring **Hyprland** on Arch Linux. It is designed to be flexible, supporting both bare-metal installations on modern hardware (like hybrid laptops with NVIDIA GPUs) and Virtual Machines.
+Este repositório contém um conjunto de scripts modulares e automatizados para a instalação e configuração do **Hyprland** no Arch Linux. Ele foi projetado para ser flexível, suportando tanto instalações diretas em hardware moderno (como notebooks híbridos com placa NVIDIA) quanto em Máquinas Virtuais.
 
-## 📦 Script Structure
+## 📦 Estrutura dos Scripts
 
-The installation process is divided into modules to make it easier to maintain and adapt to different environments:
+A instalação foi dividida em módulos para facilitar a manutenção e adaptar o processo a diferentes cenários de uso:
 
-### 1. `setup.sh` (The Main Script)
-This is the entry point for your installation. Here is what it does:
-- Prevents you from running the entire script as `root` (a safety measure for `makepkg`).
-- Enables the `[multilib]` repository if needed (essential for 32-bit libraries and Steam).
-- Installs base packages and tools (`base-devel`, `git`, audio/video packages).
-- **Interactive:** Prompts you to select your environment (Hybrid Laptop or Virtual Machine) and executes the corresponding graphics script.
-- Compiles and installs the AUR helper `yay` from scratch.
-- Installs the core **Hyprland** packages, Waybar, Kitty, Rofi, and related tools.
-- Installs fonts (JetBrains Mono, Nerd Fonts, etc.).
-- Calls the secondary script to install the login manager (Ly).
-- Enables Pipewire services.
+### 1. `setup.sh` (O Script Principal)
+Este é o ponto de entrada da sua instalação. O que ele faz:
+- Verifica e impede que você rode o script inteiro como `root` (uma medida de segurança para o `makepkg`).
+- Habilita o repositório `[multilib]` se necessário (essencial para bibliotecas 32-bits e Steam).
+- Instala pacotes base e ferramentas (`base-devel`, `git`, pacotes de áudio/vídeo).
+- **Interatividade:** Pergunta de forma interativa qual é o seu ambiente (Notebook Híbrido ou Máquina Virtual) e executa o script de vídeo correspondente.
+- Instala o AUR helper `yay` compilando do zero.
+- Instala o núcleo do **Hyprland**, Waybar, Kitty, Rofi e pacotes relacionados.
+- Instala fontes (JetBrains Mono, Nerd Fonts, etc).
+- Chama o script secundário para instalar o gerenciador de login (Ly).
+- Habilita os serviços do Pipewire.
 
-### 2. `install_graphics_hybrid.sh` (For Bare Metal / Dell G15)
-This script is triggered when you select the *Hybrid Graphics* option in `setup.sh`. It handles:
-- Detecting the running kernel (e.g., `linux`, `linux-lts`) and installing the correct `*-headers` package.
-- Installing graphics drivers for Intel + NVIDIA hybrid systems (`nvidia-dkms`, Intel drivers, and Vulkan). *Note: The DKMS driver is recommended for stability on Ampere cards like the RTX 3050.*
-- Forcing the local compilation of NVIDIA modules via `dkms autoinstall`.
-- Configuring environment variables (`/etc/environment`) required to make NVIDIA play nicely with Wayland (`GBM_BACKEND=nvidia-drm`, fixing invisible cursors, etc.).
-- Configuring **Early KMS** by editing `mkinitcpio.conf` and regenerating the initramfs to load drivers at boot.
+### 2. `install_graphics_hybrid.sh` (Para Hardware Nativo / Dell G15)
+Este script é acionado quando você escolhe a opção *Hybrid Graphics* no menu do `setup.sh`. O que ele faz:
+- Detecta o kernel em uso (ex: `linux`, `linux-lts`) e instala o pacote `*-headers` correto.
+- Instala os drivers de vídeo para sistemas híbridos Intel + NVIDIA (`nvidia-dkms`, drivers da Intel e Vulkan). *Nota: O driver DKMS é o recomendado para estabilidade em placas Ampere como a RTX 3050.*
+- Força a compilação local dos módulos NVIDIA via `dkms autoinstall`.
+- Configura as variáveis de ambiente (`/etc/environment`) necessárias para fazer a NVIDIA se comportar bem com o Wayland (`GBM_BACKEND=nvidia-drm`, melhora no backend com `NVD_BACKEND=direct`, etc).
+- Configura o **Early KMS** editando o `mkinitcpio.conf` e regerando o initramfs para carregar os drivers no boot.
+- Avisa para usar `cursor { no_hardware_cursors = true }` no seu `hyprland.conf`.
 
-### 3. `install_graphics_vm.sh` (For Virtual Machines)
-This script runs when you select the *Virtual Machine* option. It handles:
-- Installing open-source drivers (`mesa`, `vulkan-icd-loader`).
-- Installing universal guest utilities for VMs (`virtualbox-guest-utils-nox`, `open-vm-tools`, `qemu-guest-agent`, `spice-vdagent`).
-- Enabling system services for these utilities in the background (conditionally ignoring errors depending on your actual hypervisor).
-- Configuring basic Wayland environment variables, keeping the environment clean from any NVIDIA driver pollution.
-- **Important Warning:** The script reminds you that you MUST enable 3D Acceleration in your hypervisor's settings for Hyprland to run.
+### 3. `install_graphics_vm.sh` (Para Máquinas Virtuais)
+Este script é acionado quando você escolhe a opção *Virtual Machine*. O que ele faz:
+- Foca em instalar drivers abertos (`mesa`, `vulkan-icd-loader`).
+- Instala utilitários de convidado universais para que a VM funcione bem (`virtualbox-guest-utils-nox`, `open-vm-tools`, `qemu-guest-agent`, `spice-vdagent`).
+- Habilita os serviços do sistema para esses utilitários em background.
+- Inclui variáveis de fallback de software (`WLR_RENDERER_ALLOW_SOFTWARE=1`) caso falte aceleração na VM.
+- **Aviso Importante:** O script avisa que você DEVE ativar a Aceleração 3D nas configurações do hipervisor e possivelmente desativar animações no `hyprland.conf` para o Hyprland rodar ou ficar usável.
 
-### 4. `install_ly.sh` (Login Manager)
-Installs the lightweight TUI Display Manager **Ly**, focusing on speed and a text-based interface:
-- Installs build dependencies (`zig`, `ncurses`, `pam`, `libxcb`).
-- Clones the source code directly from Codeberg.
-- Compiles the tool using the Zig build command (`sudo zig build installexe -Dinit_system=systemd`).
-- Disables the default TTY prompts to enable Ly's own systemd service.
+### 4. `install_ly.sh` (Gerenciador de Login)
+Instala o adorado e leve TUI Display Manager **Ly**, focado em ser rápido e em modo texto:
+- Instala as dependências para compilação (`zig`, `ncurses`, `pam`, `libxcb`).
+- Clona o código-fonte diretamente do Codeberg.
+- Compila a ferramenta através do comando da linguagem Zig (`sudo zig build installexe -Dinit_system=systemd`).
+- Desabilita os prompts padrão de TTY para habilitar o serviço systemd do próprio Ly.
 
 ---
 
-## 🚀 How to Use
+## 🚀 Como Usar
 
-1. Clone the repository or navigate to the folder:
+1. Clone o repositório ou navegue até a pasta:
    ```bash
    cd ~/Documents/my_hyprland
    ```
 
-2. Ensure the scripts are executable:
+2. Certifique-se de que os scripts sejam executáveis:
    ```bash
    chmod +x setup.sh install_graphics_hybrid.sh install_graphics_vm.sh install_ly.sh
    ```
 
-3. Run the main script (**DO NOT** use `sudo`):
+3. Execute o script principal ( **NÃO** use `sudo`):
    ```bash
    ./setup.sh
    ```
 
-4. The script will pause to ask for your password interactively only when necessary.
-5. At the **Graphics Setup** selection menu, type `1` if you are formatting your hybrid laptop (Dell G15 RTX3050) or `2` if you are testing in a virtual machine.
-6. At the end of the script, simply confirm the automatic system reboot!
+4. O script pausará para pedir a sua senha interativamente apenas quando necessário.
+5. No menu de seleção de **Graphics Setup**, digite `1` se estiver formatando seu notebook híbrido (Dell G15 RT3050) ou `2` se estiver instalando em uma máquina virtual.
+6. Ao final do script, basta confirmar o reinício automático da máquina!
 
 ---
 
-## ⚠️ Troubleshooting & Security Notes
+## ⚠️ Guias e Resolução de Problemas
 
-- **Module Not Found in mkinitcpio:** The `install_graphics_hybrid.sh` already handles this by checking your running kernel and downloading the corresponding `headers` package. If the error reappears when updating the kernel in the future, manually run `sudo dkms autoinstall` and then `sudo mkinitcpio -P`.
-- **Black screen / Hyprland crash in VM:** Hyprland relies heavily on graphical rendering. Ensure your Virtual Machine settings allocate enough VRAM (Video RAM > 128MB) and that the "Accelerate 3D Graphics" checkbox is enabled in your virtualization engine.
+- **Para documentação compelta dos pacotes:** Consulte o arquivo `DEPENDENCIES.md` gerado.
+- **Module Not Found no mkinitcpio:** O `install_graphics_hybrid.sh` lida com isso instalando os headers corretos e rodando `dkms autoinstall`.
+- **Tela preta / Crash no Hyprland em VM:** O Hyprland usa renderização gráfica intensa. Verifique se as configurações da sua Virtual Machine permitem VRAM suficiente e se a "Aceleração 3D" está estritamente ligada. Se ainda houver lentidão com os fallbacks habilitados pelo script, desligue as opções de animação do *hyprland.conf*.
