@@ -87,7 +87,8 @@ sudo pacman -S --needed --noconfirm \
     xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
     dunst cliphist vlc pavucontrol-qt \
     pipewire pipewire-alsa pipewire-jack pipewire-pulse wireplumber \
-    gstreamer gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly ffmpeg
+    gstreamer gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly ffmpeg \
+    gnome-keyring nwg-look imagemagick fzf
 
 echo "🔡 Installing fonts..."
 sudo pacman -S --needed --noconfirm \
@@ -95,7 +96,7 @@ sudo pacman -S --needed --noconfirm \
     ttf-font-awesome ttf-opensans noto-fonts ttf-droid ttf-roboto
 
 echo "🛠️ Installing AUR packages..."
-yay -S --noconfirm hyprshot wlogout qview visual-studio-code-bin google-chrome
+yay -S --noconfirm hyprshot wlogout qview visual-studio-code-bin google-chrome qt5ct-kde qt6ct-kde
 
 echo "🖥️ Installing and configuring Ly Display Manager..."
 ./install_ly.sh
