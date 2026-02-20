@@ -37,11 +37,30 @@ else
     sudo pacman -S --needed --noconfirm linux-headers
 fi
 
-echo "🎮 Installing graphics drivers (Hybrid Intel + NVIDIA DKMS)..."
-sudo pacman -S --needed --noconfirm \
-    mesa lib32-mesa vulkan-icd-loader lib32-vulkan-icd-loader \
-    vulkan-intel lib32-vulkan-intel intel-media-driver libva-intel-driver \
-    nvidia-dkms nvidia-utils lib32-nvidia-utils nvidia-settings
+echo "============================================="
+echo "   Choose your Graphics Setup"
+echo "============================================="
+echo "1) Hybrid Graphics (Dell G15: Intel + NVIDIA RTX 3050)"
+echo "2) Virtual Machine (VirtualBox, VMware, QEMU)"
+echo "3) Skip (I already installed graphics drivers)"
+read -p "Select an option [1-3]: " GRAPHICS_CHOICE
+
+case $GRAPHICS_CHOICE in
+    1)
+        ./install_graphics_hybrid.sh
+        ;;
+    2)
+        ./install_graphics_vm.sh
+        ;;
+    3)
+        echo "⏭️ Skipping graphics driver installation."
+        ;;
+    *)
+        echo "❌ Invalid choice. Exiting to avoid broken state."
+        exit 1
+        ;;
+esac
+
 
 # Function to install yay
 install_yay() {
@@ -84,39 +103,7 @@ echo "🖥️ Installing and configuring Ly Display Manager..."
 echo "🔧 Enabling Pipewire services..."
 systemctl --user enable pipewire pipewire-pulse wireplumber
 
-echo "⚙️ Configuring NVIDIA/Hyprland environment..."
-# Fix for Hyprland crash and Hybrid GPU issues
-sudo bash -c 'cat <<EOF > /etc/environment
-# Graphics/Wayland fixes
-LIBVA_DRIVER_NAME=nvidia
-XDG_SESSION_TYPE=wayland
-GBM_BACKEND=nvidia-drm
-__GLX_VENDOR_LIBRARY_NAME=nvidia
-WLR_NO_HARDWARE_CURSORS=1
-
-# Common Wayland environment variables
-QT_QPA_PLATFORM="wayland;xcb"
-GDK_BACKEND="wayland,x11"
-SDL_VIDEODRIVER=wayland
-CLUTTER_BACKEND=wayland
-EOF'
-
-echo "📝 Configuring Early KMS for NVIDIA..."
-# Add NVIDIA modules to mkinitcpio if not present
-if ! grep -q "nvidia nvidia_modeset nvidia_uvm nvidia_drm" /etc/mkinitcpio.conf; then
-    sudo sed -i 's/^MODULES=(/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm /' /etc/mkinitcpio.conf
-fi
-# Force DKMS build before mkinitcpio
-echo "🔨 Building NVIDIA kernel modules via DKMS..."
-sudo dkms autoinstall
-
-# Always regenerate to be safe after driver/header changes
-sudo mkinitcpio -P
-
-# Set nvidia_drm.modeset=1
-if [ ! -f /etc/modprobe.d/nvidia.conf ]; then
-    sudo bash -c 'echo "options nvidia-drm modeset=1" > /etc/modprobe.d/nvidia.conf'
-fi
+# Graphics and Environment setup are now handled in the dedicated driver scripts.
 
 echo "✅ Setup complete!"
 
